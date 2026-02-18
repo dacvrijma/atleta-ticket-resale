@@ -51,8 +51,8 @@ Update the add-event flow so the user only provides a **title** and a **curl com
 
 ## Open Questions
 
-- Should the raw curl command string also be stored on the Event for potential re-parsing later, or is the parsed data sufficient?
-- Should we validate that the URL looks like an Atleta API endpoint, or accept any URL?
+- Should the raw curl command string also be stored on the Event for potential re-parsing later, or is the parsed data sufficient? No
+- Should we validate that the URL looks like an Atleta API endpoint, or accept any URL? Yes
 
 ## Testing Guidelines
 

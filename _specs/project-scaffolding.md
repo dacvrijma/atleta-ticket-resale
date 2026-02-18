@@ -10,7 +10,7 @@ Set up the core application shell for the ticket-resale scanning platform. The a
 
 - The app layout has two regions: a side panel (left) and a main content area (right).
 - The side panel displays a scrollable list of all added events, each shown by name.
-- The side panel contains an "Add Event" button or inline form to create a new event.
+- The side panel contains an "Add Event" button, that will open a form in the main content
 - Adding an event requires three inputs:
   - **Name** — a human-readable label for the event.
   - **Curl command** — a raw curl string the user pastes in; stored as-is for later use.
@@ -42,9 +42,9 @@ N/A
 
 ## Open Questions
 
-- Should events persist across page refreshes (e.g. localStorage) or is in-memory state sufficient for now?
-- Is there a maximum length for the curl command input, or should it accept arbitrarily long strings?
-- What should the empty state of the main content area look like before an event is selected?
+- Should events persist across page refreshes (e.g. localStorage) or is in-memory state sufficient for now? In memory is fine for now
+- Is there a maximum length for the curl command input, or should it accept arbitrarily long strings? No max
+- What should the empty state of the main content area look like before an event is selected? you decide
 
 ## Testing Guidelines
 

@@ -1,20 +1,27 @@
-import { mockRegistrations } from "@/data/mock-resale"
-import { TicketList } from "@/components/TicketList"
+"use client"
 
-type Params = Promise<{ id: string }>
+import { useParams } from "next/navigation"
+import { useEvents } from "@/context/EventsContext"
 
-export default async function EventDetailPage({ params }: { params: Params }) {
-  const { id } = await params
+export default function EventDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const { getEvent } = useEvents()
+  const event = getEvent(id)
 
-  // For now, use all mock registrations regardless of event id
-  const registrations = mockRegistrations
-  const eventTitle =
-    registrations[0]?.promotion?.title ?? `Event ${id}`
+  if (!event) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-sm text-gray-400">Event not found.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-4 text-xl font-bold text-gray-900">{eventTitle}</h1>
-      <TicketList registrations={registrations} />
+      <h1 className="mb-4 text-xl font-bold text-gray-900">{event.title}</h1>
+      <pre className="overflow-auto rounded bg-gray-100 p-4 text-xs text-gray-800">
+        {JSON.stringify(event, null, 2)}
+      </pre>
     </div>
   )
 }

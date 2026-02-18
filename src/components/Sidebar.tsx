@@ -1,31 +1,45 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEvents } from "@/context/EventsContext";
+import { useState } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { useEvents } from "@/context/EventsContext"
+import { parseCurl } from "@/lib/parse-curl"
 
 export function Sidebar() {
-  const { events, addEvent } = useEvents();
-  const pathname = usePathname();
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState("");
-  const [curlCommand, setCurlCommand] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [error, setError] = useState("");
+  const { events, addEvent } = useEvents()
+  const pathname = usePathname()
+  const router = useRouter()
+  const [showForm, setShowForm] = useState(false)
+  const [title, setTitle] = useState("")
+  const [curlCommand, setCurlCommand] = useState("")
+  const [error, setError] = useState("")
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !curlCommand.trim() || !projectId.trim()) {
-      setError("All fields are required.");
-      return;
+    e.preventDefault()
+    if (!title.trim() || !curlCommand.trim()) {
+      setError("All fields are required.")
+      return
     }
-    addEvent({ name: name.trim(), curlCommand, projectId: projectId.trim() });
-    setName("");
-    setCurlCommand("");
-    setProjectId("");
-    setError("");
-    setShowForm(false);
+
+    const parsed = parseCurl(curlCommand)
+    if (!parsed.url) {
+      setError("Could not extract a URL from the curl command.")
+      return
+    }
+
+    const id = addEvent({
+      title: title.trim(),
+      url: parsed.url,
+      headers: parsed.headers,
+      resaleUrl: parsed.resaleUrl,
+    })
+
+    setTitle("")
+    setCurlCommand("")
+    setError("")
+    setShowForm(false)
+    router.push(`/events/${id}`)
   }
 
   return (
@@ -44,14 +58,14 @@ export function Sidebar() {
         <form onSubmit={handleSubmit} className="border-b border-gray-200 p-4 space-y-3">
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div>
-            <label htmlFor="event-name" className="block text-xs font-medium text-gray-600 mb-1">
-              Name
+            <label htmlFor="event-title" className="block text-xs font-medium text-gray-600 mb-1">
+              Title
             </label>
             <input
-              id="event-name"
+              id="event-title"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
@@ -63,21 +77,12 @@ export function Sidebar() {
               id="curl-command"
               value={curlCommand}
               onChange={(e) => setCurlCommand(e.target.value)}
-              rows={3}
+              rows={4}
               className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono focus:border-blue-500 focus:outline-none"
             />
-          </div>
-          <div>
-            <label htmlFor="project-id" className="block text-xs font-medium text-gray-600 mb-1">
-              Project ID
-            </label>
-            <input
-              id="project-id"
-              type="text"
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
-            />
+            <p className="mt-1 text-xs text-gray-400">
+              Paste the curl command copied from the GraphQL call via Proxyman.
+            </p>
           </div>
           <button
             type="submit"
@@ -96,7 +101,7 @@ export function Sidebar() {
         ) : (
           <ul className="space-y-1">
             {events.map((event) => {
-              const isActive = pathname === `/events/${event.id}`;
+              const isActive = pathname === `/events/${event.id}`
               return (
                 <li key={event.id}>
                   <Link
@@ -107,14 +112,14 @@ export function Sidebar() {
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
-                    {event.name}
+                    {event.title}
                   </Link>
                 </li>
-              );
+              )
             })}
           </ul>
         )}
       </nav>
     </aside>
-  );
+  )
 }
