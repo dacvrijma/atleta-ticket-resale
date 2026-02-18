@@ -10,7 +10,13 @@
       "Bash(npx create-next-app@latest:*)",
       "Bash(rsync:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm test:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
     ]
   }
 }
