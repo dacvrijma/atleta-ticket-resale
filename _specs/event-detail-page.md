@@ -12,7 +12,7 @@ Implement the event detail page at `/events/[id]`. The page displays the event t
 - The ticket list renders one row per `resellableRegistration` entry in the response.
 - Each ticket row displays:
   - **Ticket title** (`ticket.title`) and **promotion name** (`promotion.title`) — shown together, e.g. "MEN SOLO HEAVY · GYMRACE"
-  - **Price** — `resale.amount` divided by 100, formatted as euros (e.g. `€ 42.00`)
+  - **Price** — `resale.amount + resale.fee` divided by 100, formatted as euros (e.g. `€ 44.10`). This is the total price the buyer pays including the resale fee.
   - **Time slot** — formatted date and time from `time_slot.start_date` and `time_slot.start_time`, e.g. "Sunday, 1 March · 09:10"
   - **"Buy now" button** — opens `resale.public_url` in a new tab
 - Only tickets where `resale.available === true` are shown.
@@ -48,7 +48,7 @@ Models live in `src/types/resale.ts`.
 - [ ] An empty state is shown when there are no available tickets.
 - [ ] TypeScript types for the API response are defined in `src/types/resale.ts`.
 - [ ] Mock data file contains the exact sample entry (duplicated to show a list).
-- [ ] Amounts are displayed as euros with two decimal places (cents ÷ 100).
+- [ ] Displayed price is the total buyer price (`amount + fee`) in euros with two decimal places (cents ÷ 100).
 
 ## Open Questions
 
@@ -60,6 +60,6 @@ Models live in `src/types/resale.ts`.
 Create test file(s) in `./tests` for the new feature, without going too heavy:
 
 - Event detail page renders the promotion title as the heading.
-- Each available ticket row shows title, price, and time slot.
+- Each available ticket row shows title, total price (amount + fee), and time slot.
 - Tickets with `resale.available === false` are not rendered.
 - The "Buy now" link has the correct `href` pointing to `public_url`.
