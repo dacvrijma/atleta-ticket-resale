@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo create:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git -C /Users/devavrijma/Developer/atleta-ticket-resale status)",
+      "Bash(git init:*)",
+      "Bash(git commit:*)",
+      "Bash(git -C /Users/devavrijma/Developer/atleta-ticket-resale checkout -b claude/feature/hello-world-react-app)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(rsync:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)"
+    ]
+  }
+}
