@@ -13,15 +13,11 @@ function makeRegistration(
   return {
     resale: {
       id: overrides.id,
-      resellable: true,
       available: true,
-      amount: 4200,
       total_amount: 4200,
       fee: 210,
       public_url: "https://example.com/buy",
       public_token: "token",
-      time_left: null,
-      total_time: 600,
       upgrades: [],
     },
     ticket: {
@@ -59,7 +55,7 @@ describe("TicketList", () => {
     expect(screen.getByText("· GYMRACE")).toBeInTheDocument()
   })
 
-  it("shows total price (amount + fee) in euros", () => {
+  it("shows total price (total_amount + fee) in euros", () => {
     render(
       <TicketList registrations={[makeRegistration({ id: "1" })]} />
     )
@@ -79,15 +75,11 @@ describe("TicketList", () => {
       id: "2",
       resale: {
         id: "2",
-        resellable: true,
         available: false,
-        amount: 5000,
         total_amount: 5000,
         fee: 250,
         public_url: "https://example.com/nope",
         public_token: "t",
-        time_left: null,
-        total_time: 600,
         upgrades: [],
       },
       ticket: {
@@ -112,15 +104,11 @@ describe("TicketList", () => {
       id: "1",
       resale: {
         id: "1",
-        resellable: true,
         available: false,
-        amount: 5000,
         total_amount: 5000,
         fee: 250,
         public_url: "https://example.com",
         public_token: "t",
-        time_left: null,
-        total_time: 600,
         upgrades: [],
       },
     })

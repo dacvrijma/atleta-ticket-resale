@@ -5,9 +5,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from "rea
 export interface Event {
   id: string
   title: string
-  url: string
-  headers: Record<string, string>
-  resaleUrl: string | null
+  eventId: string
 }
 
 interface EventsContextValue {

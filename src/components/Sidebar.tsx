@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEvents } from "@/context/EventsContext"
-import { parseCurl } from "@/lib/parse-curl"
 
 export function Sidebar() {
   const { events, addEvent } = useEvents()
@@ -12,31 +11,23 @@ export function Sidebar() {
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [title, setTitle] = useState("")
-  const [curlCommand, setCurlCommand] = useState("")
+  const [eventId, setEventId] = useState("")
   const [error, setError] = useState("")
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title.trim() || !curlCommand.trim()) {
+    if (!title.trim() || !eventId.trim()) {
       setError("All fields are required.")
-      return
-    }
-
-    const parsed = parseCurl(curlCommand)
-    if (!parsed.url) {
-      setError("Could not extract a URL from the curl command.")
       return
     }
 
     const id = addEvent({
       title: title.trim(),
-      url: parsed.url,
-      headers: parsed.headers,
-      resaleUrl: parsed.resaleUrl,
+      eventId: eventId.trim(),
     })
 
     setTitle("")
-    setCurlCommand("")
+    setEventId("")
     setError("")
     setShowForm(false)
     router.push(`/events/${id}`)
@@ -70,18 +61,18 @@ export function Sidebar() {
             />
           </div>
           <div>
-            <label htmlFor="curl-command" className="block text-xs font-medium text-gray-600 mb-1">
-              Curl Command
+            <label htmlFor="event-id" className="block text-xs font-medium text-gray-600 mb-1">
+              Event ID
             </label>
-            <textarea
-              id="curl-command"
-              value={curlCommand}
-              onChange={(e) => setCurlCommand(e.target.value)}
-              rows={4}
+            <input
+              id="event-id"
+              type="text"
+              value={eventId}
+              onChange={(e) => setEventId(e.target.value)}
               className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm font-mono focus:border-blue-500 focus:outline-none"
             />
             <p className="mt-1 text-xs text-gray-400">
-              Paste the curl command copied from the GraphQL call via Proxyman.
+              The Atleta event ID from the resale URL (e.g. SdUE6lPR70dK).
             </p>
           </div>
           <button

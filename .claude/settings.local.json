@@ -16,7 +16,9 @@
       "Bash(git checkout:*)",
       "Bash(npm test:*)",
       "Bash(git push:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(curl 'https://atleta.cc/api/graphql' -s -X POST -H 'Content-Type: application/json' -H 'atleta-session-id: 4exluwv0pj2tu8cwaqmp' -H 'x-xsrf-token: eyJpdiI6IlVCWW9wU2JJaGx3ZG9EdUJjNXVZT3c9PSIsInZhbHVlIjoiOWVIakJIbHpIN1o1WU9mSDRrNHZWNFB4N0RKWTRHRldqajRRalBZcVB1aE5IRDVra3V1NEZyQlpFQWcrN1kwUDBQbWdxZU8wcExXaXFwZ2ZjckxvMDk3VVVLanEwVHhlSnVWb09DeTlWNCsrY1lRZVdqWjE5S0NGeTBVWjkzdFUiLCJtYWMiOiJiNjU3MGRkYTVjYjI3YTliOTAyMzA3NmRlODIyNDVjYTg2M2VkMTkxOGZjM2ZhOWRjYzk2NWRiNzc2MTAyM2ZkIiwidGFnIjoiIn0=' -H 'Origin: https://atleta.cc' -H 'Referer: https://atleta.cc/e/SdUE6lPR70dK/resale' --cookie 'atleta_session=eyJpdiI6IkxpZHpTNTR2K2Y5RVByNXpWdEFtNGc9PSIsInZhbHVlIjoidERhWGJOVkNUaXp4b1pGRnRyNGg5ZzJ1eEhzTE5kSnpEejZWRkhxMjFOT2FKdzlzT1ByTHNYek5PMVVYZ2hWcEFKUTl0by9iVlpwVENtQzZHTmd1OFV2WXd2RWtheWhXOTZBc0V5cGNYTHV3SWhaMXc2NnlUZ2FmMTIxc2ZUQW0iLCJtYWMiOiJjMDJlZmY0OGE1NGMyZTNmNDM4YTNiZDEyYzNiMWYyYTNlOTYyMGVmZjNkYjRhMTEzMmQ0OTU5NGMzNGZhYjA1IiwidGFnIjoiIn0=' -d '{\"\"operationName\"\":\"\"GetRegistrationsForSale\"\",\"\"variables\"\":{\"\"id\"\":\"\"SdUE6lPR70dK\"\",\"\"tickets\"\":null,\"\"limit\"\":10},\"\"query\"\":\"\"query GetRegistrationsForSale\\($id: ID!, $tickets: [String!], $limit: Int!, $invitation_code: String\\) {\\\\n  event\\(id: $id\\) {\\\\n    id\\\\n    registrations_for_sale\\(tickets: $tickets, limit: $limit\\) {\\\\n      id\\\\n      ticket { id title units __typename }\\\\n      resale { id available total_amount fee public_url public_token __typename }\\\\n      time_slot { id start_date start_time title multi_date __typename }\\\\n      promotion { id title __typename }\\\\n      start_time corral_name __typename\\\\n    }\\\\n    __typename\\\\n  }\\\\n}\"\"}')",
+      "Bash(python3:*)"
     ]
   }
 }

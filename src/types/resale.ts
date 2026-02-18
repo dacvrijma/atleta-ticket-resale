@@ -1,14 +1,10 @@
 export interface Resale {
   id: string
-  resellable: boolean
   available: boolean
-  amount: number
   total_amount: number
   fee: number
   public_url: string
   public_token: string
-  time_left: number | null
-  total_time: number
   upgrades: unknown[]
 }
 
@@ -50,18 +46,10 @@ export interface ResaleRegistration {
   corral_name: string | null
 }
 
-export interface ResaleApiEvent {
-  id: string
-  locale: string
-  project: {
-    id: string
-    organisation_country: string
-  }
-}
-
 export interface ResaleApiResponse {
   data: {
-    resellableRegistration: ResaleRegistration
-    event: ResaleApiEvent
+    event: {
+      registrations_for_sale: ResaleRegistration[]
+    }
   }
 }
