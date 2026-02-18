@@ -42,17 +42,16 @@ describe("Sidebar", () => {
 
     await user.click(screen.getByText("Add Event"))
     expect(screen.getByLabelText("Title")).toBeInTheDocument()
-    expect(screen.getByLabelText("Curl Command")).toBeInTheDocument()
-    expect(screen.queryByLabelText("Project ID")).not.toBeInTheDocument()
+    expect(screen.getByLabelText("Event ID")).toBeInTheDocument()
   })
 
-  it("shows hint text for curl command field", async () => {
+  it("shows hint text for event ID field", async () => {
     const user = userEvent.setup()
     renderSidebar()
 
     await user.click(screen.getByText("Add Event"))
     expect(
-      screen.getByText("Paste the curl command copied from the GraphQL call via Proxyman.")
+      screen.getByText("The Atleta event ID from the resale URL (e.g. SdUE6lPR70dK).")
     ).toBeInTheDocument()
   })
 
@@ -62,10 +61,7 @@ describe("Sidebar", () => {
 
     await user.click(screen.getByText("Add Event"))
     await user.type(screen.getByLabelText("Title"), "Test Event")
-    await user.type(
-      screen.getByLabelText("Curl Command"),
-      "curl 'https://atleta.cc/api/graphql' -H 'Host: atleta.cc'"
-    )
+    await user.type(screen.getByLabelText("Event ID"), "SdUE6lPR70dK")
     await user.click(screen.getByText("Save Event"))
 
     expect(screen.getByText("Test Event")).toBeInTheDocument()
@@ -78,10 +74,7 @@ describe("Sidebar", () => {
 
     await user.click(screen.getByText("Add Event"))
     await user.type(screen.getByLabelText("Title"), "Test Event")
-    await user.type(
-      screen.getByLabelText("Curl Command"),
-      "curl 'https://atleta.cc/api/graphql' -H 'Host: atleta.cc'"
-    )
+    await user.type(screen.getByLabelText("Event ID"), "SdUE6lPR70dK")
     await user.click(screen.getByText("Save Event"))
 
     expect(pushMock).toHaveBeenCalledWith(expect.stringMatching(/^\/events\/.+/))
@@ -103,10 +96,7 @@ describe("Sidebar", () => {
 
     await user.click(screen.getByText("Add Event"))
     await user.type(screen.getByLabelText("Title"), "My Event")
-    await user.type(
-      screen.getByLabelText("Curl Command"),
-      "curl 'https://atleta.cc/api/graphql' -H 'Host: atleta.cc'"
-    )
+    await user.type(screen.getByLabelText("Event ID"), "SdUE6lPR70dK")
     await user.click(screen.getByText("Save Event"))
 
     const link = screen.getByText("My Event").closest("a")

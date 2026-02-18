@@ -61,7 +61,7 @@ export function TicketList({
               )}
             </p>
             <p className="text-sm font-medium text-blue-700">
-              {formatPrice(reg.resale.amount, reg.resale.fee)}
+              {formatPrice(reg.resale.total_amount, reg.resale.fee)}
             </p>
             <p className="text-xs text-gray-500">
               {formatTimeSlot(

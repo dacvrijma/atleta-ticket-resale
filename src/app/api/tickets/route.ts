@@ -1,0 +1,29 @@
+import { NextRequest } from "next/server"
+
+const GRAPHQL_QUERY =
+  "query GetRegistrationsForSale($id: ID!, $tickets: [String!], $limit: Int!, $invitation_code: String) {\n  event(id: $id) {\n    id\n    registrations_for_sale_count\n    filtered_registrations_for_sale_count: registrations_for_sale_count(\n      tickets: $tickets\n    )\n    sold_registrations_count\n    enable_waitlist\n    waitlist_size\n    ticket_categories(invitation_code: $invitation_code) {\n      id\n      title\n      resellable_tickets {\n        id\n        title\n        cached_registrations_for_sale_count\n        __typename\n      }\n      __typename\n    }\n    registrations_for_sale(tickets: $tickets, limit: $limit) {\n      id\n      ticket {\n        id\n        title\n        units\n        __typename\n      }\n      start_time\n      corral_name\n      time_slot {\n        id\n        start_date\n        start_time\n        title\n        multi_date\n        __typename\n      }\n      promotion {\n        id\n        title\n        __typename\n      }\n      resale {\n        id\n        available\n        total_amount\n        fee\n        public_url\n        public_token\n        upgrades {\n          id\n          product {\n            id\n            title\n            type\n            __typename\n          }\n          product_variant {\n            id\n            title\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}"
+
+export async function POST(request: NextRequest) {
+  const { eventId } = await request.json()
+
+  const body = JSON.stringify({
+    operationName: "GetRegistrationsForSale",
+    variables: { id: eventId, tickets: null, limit: 10 },
+    query: GRAPHQL_QUERY,
+  })
+
+  const response = await fetch("https://atleta.cc/api/graphql", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  })
+
+  if (!response.ok) {
+    return new Response(`Upstream error: ${response.status}`, {
+      status: response.status,
+    })
+  }
+
+  const data = await response.json()
+  return Response.json(data)
+}
