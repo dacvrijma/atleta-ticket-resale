@@ -23,6 +23,32 @@ function formatCountdown(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
+function playAlertSound() {
+  try {
+    const ctx = new AudioContext()
+    const oscillator = ctx.createOscillator()
+    const gainNode = ctx.createGain()
+    oscillator.connect(gainNode)
+    gainNode.connect(ctx.destination)
+    oscillator.frequency.value = 880
+    oscillator.type = "sine"
+    gainNode.gain.setValueAtTime(0.5, ctx.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
+    oscillator.start(ctx.currentTime)
+    oscillator.stop(ctx.currentTime + 0.5)
+  } catch {
+    // AudioContext not available (e.g. in tests)
+  }
+}
+
+function sendMatchNotification(ticketTitle: string) {
+  if (typeof window === "undefined" || !("Notification" in window)) return
+  if (Notification.permission !== "granted") return
+  new Notification("Ticket match found!", {
+    body: ticketTitle,
+  })
+}
+
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { getEvent } = useEvents()
@@ -35,31 +61,44 @@ export default function EventDetailPage() {
     refreshKey
   )
 
-  const { countdown, intervalMinutes, setIntervalMinutes, triggerRefresh } =
+  const { countdown, intervalMinutes, paused, setIntervalMinutes, setPaused, triggerRefresh } =
     useAutoRefresh({
       onRefresh: () => setRefreshKey((k) => k + 1),
     })
 
-  const { query, autoOpen } = useAlertSettings()
+  const { query, autoOpen, playSound, sendNotification } = useAlertSettings()
 
-  // Use refs so the effect always sees the latest query/autoOpen values
+  // Use refs so the effect always sees the latest values
   // without re-running when they change (we only want to trigger on new fetches)
   const queryRef = useRef(query)
   const autoOpenRef = useRef(autoOpen)
+  const playSoundRef = useRef(playSound)
+  const sendNotificationRef = useRef(sendNotification)
   useEffect(() => { queryRef.current = query }, [query])
   useEffect(() => { autoOpenRef.current = autoOpen }, [autoOpen])
+  useEffect(() => { playSoundRef.current = playSound }, [playSound])
+  useEffect(() => { sendNotificationRef.current = sendNotification }, [sendNotification])
 
   useEffect(() => {
     if (!lastRefreshed) return
     const q = queryRef.current
-    const open = autoOpenRef.current
-    if (!q.trim() || !open) return
+    if (!q.trim()) return
     const match = tickets.find(
       (reg) => reg.resale.available && matchesQuery(reg, q)
     )
-    if (match?.resale.public_url) {
+    if (!match) return
+
+    if (autoOpenRef.current && match.resale.public_url) {
       window.open(match.resale.public_url, "_blank")
     }
+    if (playSoundRef.current) {
+      playAlertSound()
+    }
+    if (sendNotificationRef.current) {
+      sendMatchNotification(match.ticket.title)
+    }
+    // Pause auto-refresh when a match is found
+    setPaused(true)
   }, [lastRefreshed, tickets])
 
   if (!event) {
@@ -84,16 +123,30 @@ export default function EventDetailPage() {
           </span>
         </span>
 
-        {/* Countdown */}
-        <span>
-          Next refresh in:{" "}
-          <span
-            className="font-mono font-medium text-gray-900"
-            aria-label={`Next refresh in ${formatCountdown(countdown)}`}
-          >
-            {formatCountdown(countdown)}
+        {paused ? (
+          /* Paused state — show re-enable toggle */
+          <span className="flex items-center gap-2 text-amber-600">
+            <span className="font-medium">Auto-refresh paused</span>
+            <button
+              onClick={() => setPaused(false)}
+              aria-label="Resume auto-refresh"
+              className="rounded bg-amber-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-amber-500"
+            >
+              Resume
+            </button>
           </span>
-        </span>
+        ) : (
+          /* Running state — show countdown */
+          <span>
+            Next refresh in:{" "}
+            <span
+              className="font-mono font-medium text-gray-900"
+              aria-label={`Next refresh in ${formatCountdown(countdown)}`}
+            >
+              {formatCountdown(countdown)}
+            </span>
+          </span>
+        )}
 
         {/* Interval controls */}
         <span className="flex items-center gap-2">

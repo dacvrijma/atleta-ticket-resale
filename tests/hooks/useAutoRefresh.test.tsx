@@ -119,4 +119,97 @@ describe("useAutoRefresh", () => {
     expect(onRefresh).toHaveBeenCalledTimes(1)
     expect(result.current.countdown).toBe(120)
   })
+
+  describe("paused state", () => {
+    it("starts unpaused", () => {
+      vi.useFakeTimers()
+      const { result } = renderHook(() => useAutoRefresh({ onRefresh: vi.fn() }))
+      expect(result.current.paused).toBe(false)
+    })
+
+    it("setPaused(true) stops the countdown", () => {
+      vi.useFakeTimers()
+      const onRefresh = vi.fn()
+      const { result } = renderHook(() => useAutoRefresh({ onRefresh }))
+
+      act(() => {
+        result.current.setPaused(true)
+      })
+
+      act(() => {
+        vi.advanceTimersByTime(30 * 1000)
+      })
+
+      // Countdown should not have changed from the reset value (60)
+      expect(result.current.countdown).toBe(60)
+      expect(onRefresh).not.toHaveBeenCalled()
+    })
+
+    it("setPaused(false) resumes the countdown", () => {
+      vi.useFakeTimers()
+      const { result } = renderHook(() => useAutoRefresh({ onRefresh: vi.fn() }))
+
+      act(() => {
+        result.current.setPaused(true)
+      })
+
+      act(() => {
+        vi.advanceTimersByTime(30 * 1000)
+      })
+
+      act(() => {
+        result.current.setPaused(false)
+      })
+
+      // After unpausing countdown resets to full interval
+      expect(result.current.countdown).toBe(60)
+
+      act(() => {
+        vi.advanceTimersByTime(5 * 1000)
+      })
+
+      expect(result.current.countdown).toBe(55)
+    })
+
+    it("does not call onRefresh while paused", () => {
+      vi.useFakeTimers()
+      const onRefresh = vi.fn()
+      const { result } = renderHook(() => useAutoRefresh({ onRefresh }))
+
+      act(() => {
+        result.current.setPaused(true)
+      })
+
+      act(() => {
+        vi.advanceTimersByTime(2 * 60 * 1000)
+      })
+
+      expect(onRefresh).not.toHaveBeenCalled()
+    })
+
+    it("resumes calling onRefresh after unpausing", () => {
+      vi.useFakeTimers()
+      const onRefresh = vi.fn()
+      const { result } = renderHook(() => useAutoRefresh({ onRefresh }))
+
+      act(() => {
+        result.current.setPaused(true)
+      })
+
+      act(() => {
+        vi.advanceTimersByTime(2 * 60 * 1000)
+      })
+      expect(onRefresh).not.toHaveBeenCalled()
+
+      act(() => {
+        result.current.setPaused(false)
+      })
+
+      act(() => {
+        vi.advanceTimersByTime(60 * 1000)
+      })
+
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
+  })
 })
