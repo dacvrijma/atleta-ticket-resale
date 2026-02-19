@@ -4,6 +4,7 @@ import EventDetailPage from "@/app/events/[id]/page"
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: "test-id" }),
+  useRouter: () => ({ push: mockRouterPush }),
 }))
 
 vi.mock("next/link", () => ({
@@ -13,9 +14,11 @@ vi.mock("next/link", () => ({
 }))
 
 const mockGetEvent = vi.hoisted(() => vi.fn())
+const mockRemoveEvent = vi.hoisted(() => vi.fn())
+const mockRouterPush = vi.hoisted(() => vi.fn())
 
 vi.mock("@/context/EventsContext", () => ({
-  useEvents: () => ({ getEvent: mockGetEvent }),
+  useEvents: () => ({ getEvent: mockGetEvent, removeEvent: mockRemoveEvent }),
 }))
 
 const mockSetQuery = vi.hoisted(() => vi.fn())
@@ -46,6 +49,8 @@ afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
   mockGetEvent.mockReset()
+  mockRemoveEvent.mockReset()
+  mockRouterPush.mockReset()
   mockUseAlertSettings.mockReset()
   mockUseAlertSettings.mockReturnValue(defaultAlertSettings())
 })
@@ -272,7 +277,7 @@ describe("EventDetailPage", () => {
       render(<EventDetailPage />)
 
       await waitFor(() => {
-        expect(windowOpenSpy).toHaveBeenCalledWith("https://example.com/buy", "_blank")
+        expect(windowOpenSpy).toHaveBeenCalledWith("https://example.com/buy", "_blank", expect.stringContaining("popup"))
       })
     })
 
@@ -290,7 +295,7 @@ describe("EventDetailPage", () => {
       expect(windowOpenSpy).not.toHaveBeenCalled()
     })
 
-    it("does NOT open a tab when the query is empty", async () => {
+    it("opens a tab when the query is empty and a ticket is available", async () => {
       mockGetEvent.mockReturnValue(TEST_EVENT)
       mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: true, playSound: false, sendNotification: false })
       mockFetchSuccess([makeRegistration("1")])
@@ -298,10 +303,9 @@ describe("EventDetailPage", () => {
 
       render(<EventDetailPage />)
 
-      await waitFor(() =>
-        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
-      )
-      expect(windowOpenSpy).not.toHaveBeenCalled()
+      await waitFor(() => {
+        expect(windowOpenSpy).toHaveBeenCalledWith("https://example.com/buy", "_blank", expect.stringContaining("popup"))
+      })
     })
 
     it("does NOT open a tab when no tickets match the query", async () => {
@@ -330,7 +334,7 @@ describe("EventDetailPage", () => {
 
       await waitFor(() => {
         expect(windowOpenSpy).toHaveBeenCalledTimes(1)
-        expect(windowOpenSpy).toHaveBeenCalledWith("https://example.com/buy/1", "_blank")
+        expect(windowOpenSpy).toHaveBeenCalledWith("https://example.com/buy/1", "_blank", expect.stringContaining("popup"))
       })
     })
 
@@ -460,6 +464,67 @@ describe("EventDetailPage", () => {
         expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
       )
       expect(NotificationSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  it("shows a Resale page link pointing to the correct URL", () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    render(<EventDetailPage />)
+
+    const link = screen.getByRole("link", { name: "Resale page" })
+    expect(link).toHaveAttribute("href", "https://atleta.cc/e/SdUE6lPR70dK/resale")
+    expect(link).toHaveAttribute("target", "_blank")
+  })
+
+  describe("delete event", () => {
+    it("shows a Delete event button", () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+      render(<EventDetailPage />)
+
+      expect(screen.getByRole("button", { name: "Delete event" })).toBeInTheDocument()
+    })
+
+    it("shows confirmation when Delete event is clicked", () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+      render(<EventDetailPage />)
+
+      fireEvent.click(screen.getByRole("button", { name: "Delete event" }))
+
+      expect(screen.getByText("Are you sure?")).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument()
+    })
+
+    it("hides confirmation when Cancel is clicked", () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+      render(<EventDetailPage />)
+
+      fireEvent.click(screen.getByRole("button", { name: "Delete event" }))
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+
+      expect(screen.queryByText("Are you sure?")).not.toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Delete event" })).toBeInTheDocument()
+    })
+
+    it("calls removeEvent and navigates to / on confirm", () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+      render(<EventDetailPage />)
+
+      fireEvent.click(screen.getByRole("button", { name: "Delete event" }))
+      fireEvent.click(screen.getByRole("button", { name: "Delete" }))
+
+      expect(mockRemoveEvent).toHaveBeenCalledWith("test-id")
+      expect(mockRouterPush).toHaveBeenCalledWith("/")
     })
   })
 

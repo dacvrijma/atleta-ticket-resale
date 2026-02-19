@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
   const body = JSON.stringify({
     operationName: "GetRegistrationsForSale",
-    variables: { id: eventId, tickets: null, limit: 10 },
+    variables: { id: eventId, tickets: null, limit: 100 },
     query: GRAPHQL_QUERY,
   })
 

@@ -11,6 +11,7 @@ export interface Event {
 interface EventsContextValue {
   events: Event[]
   addEvent: (event: Omit<Event, "id">) => string
+  removeEvent: (id: string) => void
   getEvent: (id: string) => Event | undefined
 }
 
@@ -41,13 +42,17 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     return id
   }, [])
 
+  const removeEvent = useCallback((id: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== id))
+  }, [])
+
   const getEvent = useCallback(
     (id: string) => events.find((e) => e.id === id),
     [events]
   )
 
   return (
-    <EventsContext.Provider value={{ events, addEvent, getEvent }}>
+    <EventsContext.Provider value={{ events, addEvent, removeEvent, getEvent }}>
       {children}
     </EventsContext.Provider>
   )

@@ -7,7 +7,7 @@ import { EventsProvider, useEvents } from "@/context/EventsContext"
 const STORAGE_KEY = "atleta_events"
 
 function TestConsumer() {
-  const { events, addEvent, getEvent } = useEvents()
+  const { events, addEvent, removeEvent, getEvent } = useEvents()
   return (
     <div>
       <span data-testid="count">{events.length}</span>
@@ -18,6 +18,11 @@ function TestConsumer() {
         onClick={() => addEvent({ title: "Test Event", eventId: "abc123" })}
       >
         Add
+      </button>
+      <button
+        onClick={() => removeEvent(events[0]?.id ?? "")}
+      >
+        Remove First
       </button>
       <button
         onClick={() => {
@@ -97,6 +102,34 @@ describe("EventsContext localStorage persistence", () => {
     )
 
     expect(screen.getByTestId("count").textContent).toBe("0")
+  })
+
+  it("removeEvent removes an event from the list and localStorage", async () => {
+    const seedEvents = [
+      { id: "id-1", title: "Keep Me", eventId: "evt1" },
+      { id: "id-2", title: "Remove Me", eventId: "evt2" },
+    ]
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seedEvents))
+
+    render(
+      <EventsProvider>
+        <TestConsumer />
+      </EventsProvider>
+    )
+
+    expect(screen.getByTestId("count").textContent).toBe("2")
+
+    await act(async () => {
+      screen.getByText("Remove First").click()
+    })
+
+    expect(screen.getByTestId("count").textContent).toBe("1")
+    expect(screen.getByText("Remove Me")).toBeInTheDocument()
+    expect(screen.queryByText("Keep Me")).not.toBeInTheDocument()
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]")
+    expect(stored).toHaveLength(1)
+    expect(stored[0].title).toBe("Remove Me")
   })
 
   it("getEvent works with persisted events", () => {

@@ -90,6 +90,19 @@ describe("Sidebar", () => {
     expect(screen.getByText("All fields are required.")).toBeInTheDocument()
   })
 
+  it("shows a Test popup button that opens a popup window", async () => {
+    const user = userEvent.setup()
+    const mockWrite = vi.fn()
+    const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue({ document: { write: mockWrite } } as unknown as Window)
+
+    renderSidebar()
+
+    await user.click(screen.getByRole("button", { name: "Test popup" }))
+
+    expect(windowOpenSpy).toHaveBeenCalledWith("", "_blank", expect.stringContaining("popup"))
+    expect(mockWrite).toHaveBeenCalledWith(expect.stringContaining("Setup confirmed"))
+  })
+
   it("links each event to its detail route", async () => {
     const user = userEvent.setup()
     renderSidebar()

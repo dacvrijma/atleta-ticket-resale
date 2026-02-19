@@ -119,6 +119,29 @@ describe("TicketList", () => {
     ).toBeInTheDocument()
   })
 
+  it("hides separator when promotion is null", () => {
+    render(
+      <TicketList registrations={[makeRegistration({ id: "1", promotion: null })]} />
+    )
+    expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+    expect(screen.queryByText(/· GYMRACE/)).not.toBeInTheDocument()
+  })
+
+  it("shows promotion without separator when ticket title is empty", () => {
+    render(
+      <TicketList
+        registrations={[
+          makeRegistration({
+            id: "1",
+            ticket: { id: "t1", title: "", units: 1, description: "", business: false, image: null },
+          }),
+        ]}
+      />
+    )
+    expect(screen.getByText("GYMRACE")).toBeInTheDocument()
+    expect(screen.queryByText(/· GYMRACE/)).not.toBeInTheDocument()
+  })
+
   it("renders Buy now link with correct href", () => {
     render(
       <TicketList registrations={[makeRegistration({ id: "1" })]} />

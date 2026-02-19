@@ -53,10 +53,15 @@ export function TicketList({
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-gray-900">
               {reg.ticket.title}
-              {reg.promotion && (
+              {reg.ticket.title && reg.promotion?.title && (
                 <span className="font-normal text-gray-500">
                   {" "}
                   · {reg.promotion.title}
+                </span>
+              )}
+              {!reg.ticket.title && reg.promotion?.title && (
+                <span className="font-normal text-gray-500">
+                  {reg.promotion.title}
                 </span>
               )}
             </p>
