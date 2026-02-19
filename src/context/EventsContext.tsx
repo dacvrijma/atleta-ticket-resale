@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react"
 
 export interface Event {
   id: string
@@ -14,10 +14,26 @@ interface EventsContextValue {
   getEvent: (id: string) => Event | undefined
 }
 
+const STORAGE_KEY = "atleta_events"
+
 const EventsContext = createContext<EventsContextValue | null>(null)
 
 export function EventsProvider({ children }: { children: ReactNode }) {
-  const [events, setEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState<Event[]>(() => {
+    if (typeof window === "undefined") return []
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (!stored) return []
+      const parsed = JSON.parse(stored)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events))
+  }, [events])
 
   const addEvent = useCallback((event: Omit<Event, "id">) => {
     const id = crypto.randomUUID()
