@@ -2,11 +2,6 @@
 
 import { useState } from "react"
 
-const QUERY_KEY = "alert_query"
-const AUTO_OPEN_KEY = "alert_auto_open"
-const PLAY_SOUND_KEY = "alert_play_sound"
-const SEND_NOTIFICATION_KEY = "alert_send_notification"
-
 export interface AlertSettingsState {
   query: string
   autoOpen: boolean
@@ -18,7 +13,12 @@ export interface AlertSettingsState {
   setSendNotification: (v: boolean) => void
 }
 
-export function useAlertSettings(): AlertSettingsState {
+export function useAlertSettings(eventId: string): AlertSettingsState {
+  const QUERY_KEY = `alert_${eventId}_query`
+  const AUTO_OPEN_KEY = `alert_${eventId}_auto_open`
+  const PLAY_SOUND_KEY = `alert_${eventId}_play_sound`
+  const SEND_NOTIFICATION_KEY = `alert_${eventId}_send_notification`
+
   const [query, setQueryState] = useState<string>(() => {
     if (typeof window === "undefined") return ""
     return localStorage.getItem(QUERY_KEY) ?? ""

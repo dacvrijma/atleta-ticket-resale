@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEvents } from "@/context/EventsContext"
-import { AlertSettings } from "@/components/AlertSettings"
 
 export function Sidebar() {
   const { events, addEvent } = useEvents()
@@ -112,7 +111,6 @@ export function Sidebar() {
           </ul>
         )}
       </nav>
-      <AlertSettings />
     </aside>
   )
 }
