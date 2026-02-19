@@ -18,7 +18,9 @@ vi.mock("@/context/EventsContext", () => ({
   useEvents: () => ({ getEvent: mockGetEvent }),
 }))
 
-const mockUseAlertSettings = vi.hoisted(() => vi.fn(() => ({ query: "", autoOpen: false })))
+const mockUseAlertSettings = vi.hoisted(() =>
+  vi.fn(() => ({ query: "", autoOpen: false, playSound: false, sendNotification: false }))
+)
 
 vi.mock("@/hooks/useAlertSettings", () => ({
   useAlertSettings: mockUseAlertSettings,
@@ -29,7 +31,7 @@ afterEach(() => {
   vi.restoreAllMocks()
   mockGetEvent.mockReset()
   mockUseAlertSettings.mockReset()
-  mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: false })
+  mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: false, playSound: false, sendNotification: false })
 })
 
 const TEST_EVENT = {
@@ -247,7 +249,7 @@ describe("EventDetailPage", () => {
   describe("alert auto-open", () => {
     it("opens the buy URL when autoOpen is ON and a ticket title matches the query", async () => {
       mockGetEvent.mockReturnValue(TEST_EVENT)
-      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true })
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true, playSound: false, sendNotification: false })
       mockFetchSuccess([makeRegistration("1")])
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
 
@@ -260,7 +262,7 @@ describe("EventDetailPage", () => {
 
     it("does NOT open a tab when autoOpen is OFF even if a ticket matches", async () => {
       mockGetEvent.mockReturnValue(TEST_EVENT)
-      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false })
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: false })
       mockFetchSuccess([makeRegistration("1")])
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
 
@@ -274,7 +276,7 @@ describe("EventDetailPage", () => {
 
     it("does NOT open a tab when the query is empty", async () => {
       mockGetEvent.mockReturnValue(TEST_EVENT)
-      mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: true })
+      mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: true, playSound: false, sendNotification: false })
       mockFetchSuccess([makeRegistration("1")])
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
 
@@ -288,7 +290,7 @@ describe("EventDetailPage", () => {
 
     it("does NOT open a tab when no tickets match the query", async () => {
       mockGetEvent.mockReturnValue(TEST_EVENT)
-      mockUseAlertSettings.mockReturnValue({ query: "WOMEN", autoOpen: true })
+      mockUseAlertSettings.mockReturnValue({ query: "WOMEN", autoOpen: true, playSound: false, sendNotification: false })
       mockFetchSuccess([makeRegistration("1")])
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
 
@@ -302,7 +304,7 @@ describe("EventDetailPage", () => {
 
     it("opens only the first matching ticket's URL when multiple tickets match", async () => {
       mockGetEvent.mockReturnValue(TEST_EVENT)
-      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true })
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true, playSound: false, sendNotification: false })
       const reg1 = { ...makeRegistration("1"), resale: { ...makeRegistration("1").resale, public_url: "https://example.com/buy/1" } }
       const reg2 = { ...makeRegistration("2"), resale: { ...makeRegistration("2").resale, public_url: "https://example.com/buy/2" } }
       mockFetchSuccess([reg1, reg2])
@@ -318,7 +320,7 @@ describe("EventDetailPage", () => {
 
     it("does NOT open a tab when no tickets are returned", async () => {
       mockGetEvent.mockReturnValue(TEST_EVENT)
-      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true })
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true, playSound: false, sendNotification: false })
       mockFetchSuccess([])
       const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
 
@@ -328,6 +330,177 @@ describe("EventDetailPage", () => {
         expect(screen.getByText("No tickets available at the moment.")).toBeInTheDocument()
       )
       expect(windowOpenSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("play sound on match", () => {
+    it("creates AudioContext when playSound is ON and a match is found", async () => {
+      const mockOscillator = {
+        connect: vi.fn(),
+        frequency: { value: 0 },
+        type: "sine" as OscillatorType,
+        start: vi.fn(),
+        stop: vi.fn(),
+      }
+      const mockGainNode = {
+        connect: vi.fn(),
+        gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+      }
+      const AudioContextSpy = vi.fn(function () {
+        return {
+          createOscillator: vi.fn(() => mockOscillator),
+          createGain: vi.fn(() => mockGainNode),
+          destination: {},
+          currentTime: 0,
+        }
+      })
+      globalThis.AudioContext = AudioContextSpy as unknown as typeof AudioContext
+
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: true, sendNotification: false })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() => {
+        expect(AudioContextSpy).toHaveBeenCalled()
+      })
+    })
+
+    it("does NOT create AudioContext when playSound is OFF", async () => {
+      const AudioContextSpy = vi.fn()
+      globalThis.AudioContext = AudioContextSpy as unknown as typeof AudioContext
+
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: false })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+      )
+      expect(AudioContextSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("send notification on match", () => {
+    it("fires a Notification when sendNotification is ON and permission is granted", async () => {
+      const NotificationSpy = vi.fn()
+      Object.defineProperty(NotificationSpy, "permission", {
+        value: "granted",
+        configurable: true,
+      })
+      globalThis.Notification = NotificationSpy as unknown as typeof Notification
+
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: true })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() => {
+        expect(NotificationSpy).toHaveBeenCalledWith("Ticket match found!", {
+          body: "MEN SOLO HEAVY",
+        })
+      })
+    })
+
+    it("does NOT fire a Notification when sendNotification is OFF", async () => {
+      const NotificationSpy = vi.fn()
+      Object.defineProperty(NotificationSpy, "permission", {
+        value: "granted",
+        configurable: true,
+      })
+      globalThis.Notification = NotificationSpy as unknown as typeof Notification
+
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: false })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+      )
+      expect(NotificationSpy).not.toHaveBeenCalled()
+    })
+
+    it("does NOT fire a Notification when permission is not granted", async () => {
+      const NotificationSpy = vi.fn()
+      Object.defineProperty(NotificationSpy, "permission", {
+        value: "default",
+        configurable: true,
+      })
+      globalThis.Notification = NotificationSpy as unknown as typeof Notification
+
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: true })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+      )
+      expect(NotificationSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("auto-refresh pause on match", () => {
+    it("shows 'Auto-refresh paused' when a match is found", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: false })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() => {
+        expect(screen.getByText("Auto-refresh paused")).toBeInTheDocument()
+      })
+    })
+
+    it("shows Resume button when auto-refresh is paused", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: false })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "Resume auto-refresh" })).toBeInTheDocument()
+      })
+    })
+
+    it("does NOT show 'Auto-refresh paused' when no match is found", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "WOMEN", autoOpen: false, playSound: false, sendNotification: false })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+      )
+      expect(screen.queryByText("Auto-refresh paused")).not.toBeInTheDocument()
+    })
+
+    it("clicking Resume restores the countdown display", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false, playSound: false, sendNotification: false })
+      mockFetchSuccess([makeRegistration("1")])
+
+      render(<EventDetailPage />)
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "Resume auto-refresh" })).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole("button", { name: "Resume auto-refresh" }))
+
+      await waitFor(() => {
+        expect(screen.getByText(/Next refresh in:/)).toBeInTheDocument()
+      })
     })
   })
 })

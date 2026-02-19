@@ -56,4 +56,40 @@ describe("useAlertSettings", () => {
     expect(localStorage.getItem("alert_auto_open")).toBe("false")
     expect(result.current.autoOpen).toBe(false)
   })
+
+  it("returns playSound=false by default", () => {
+    const { result } = renderHook(() => useAlertSettings())
+    expect(result.current.playSound).toBe(false)
+  })
+
+  it("restores playSound=true from localStorage", () => {
+    localStorage.setItem("alert_play_sound", "true")
+    const { result } = renderHook(() => useAlertSettings())
+    expect(result.current.playSound).toBe(true)
+  })
+
+  it("persists playSound to localStorage via setPlaySound", () => {
+    const { result } = renderHook(() => useAlertSettings())
+    act(() => { result.current.setPlaySound(true) })
+    expect(localStorage.getItem("alert_play_sound")).toBe("true")
+    expect(result.current.playSound).toBe(true)
+  })
+
+  it("returns sendNotification=false by default", () => {
+    const { result } = renderHook(() => useAlertSettings())
+    expect(result.current.sendNotification).toBe(false)
+  })
+
+  it("restores sendNotification=true from localStorage", () => {
+    localStorage.setItem("alert_send_notification", "true")
+    const { result } = renderHook(() => useAlertSettings())
+    expect(result.current.sendNotification).toBe(true)
+  })
+
+  it("persists sendNotification to localStorage via setSendNotification", () => {
+    const { result } = renderHook(() => useAlertSettings())
+    act(() => { result.current.setSendNotification(true) })
+    expect(localStorage.getItem("alert_send_notification")).toBe("true")
+    expect(result.current.sendNotification).toBe(true)
+  })
 })
