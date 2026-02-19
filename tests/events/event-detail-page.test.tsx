@@ -1,4 +1,4 @@
-import { render, screen, cleanup, waitFor } from "@testing-library/react"
+import { render, screen, cleanup, waitFor, fireEvent } from "@testing-library/react"
 import { describe, it, expect, vi, afterEach } from "vitest"
 import EventDetailPage from "@/app/events/[id]/page"
 
@@ -127,5 +127,112 @@ describe("EventDetailPage", () => {
         screen.getByText("Request failed with status 403")
       ).toBeInTheDocument()
     })
+  })
+
+  it("shows refresh controls when an event is found", () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    render(<EventDetailPage />)
+
+    expect(screen.getByText(/Last refreshed:/)).toBeInTheDocument()
+    expect(screen.getByText(/Next refresh in:/)).toBeInTheDocument()
+    expect(screen.getByText(/Interval:/)).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Refresh tickets" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Decrease interval" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Increase interval" })
+    ).toBeInTheDocument()
+  })
+
+  it("shows a dash for last refreshed before the first fetch completes", () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    render(<EventDetailPage />)
+
+    expect(screen.getByText("—")).toBeInTheDocument()
+  })
+
+  it("replaces the dash with a timestamp after a successful fetch", async () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    mockFetchSuccess([])
+
+    render(<EventDetailPage />)
+
+    await waitFor(() => {
+      expect(screen.queryByText("—")).not.toBeInTheDocument()
+    })
+  })
+
+  it("Refresh now button triggers an additional fetch", async () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ data: { event: { registrations_for_sale: [] } } }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    )
+
+    render(<EventDetailPage />)
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("No tickets available at the moment.")
+      ).toBeInTheDocument()
+    )
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh tickets" }))
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2))
+  })
+
+  it("shows the default interval as 1 min", () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    render(<EventDetailPage />)
+
+    expect(screen.getByText("1 min")).toBeInTheDocument()
+  })
+
+  it("Increase interval button increments the displayed interval", () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    render(<EventDetailPage />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Increase interval" }))
+
+    expect(screen.getByText("2 min")).toBeInTheDocument()
+  })
+
+  it("Decrease interval button is disabled when interval is already 1 min", () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    render(<EventDetailPage />)
+
+    expect(
+      screen.getByRole("button", { name: "Decrease interval" })
+    ).toBeDisabled()
+  })
+
+  it("Decrease interval button becomes enabled after increasing the interval", () => {
+    mockGetEvent.mockReturnValue(TEST_EVENT)
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    render(<EventDetailPage />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Increase interval" }))
+
+    expect(
+      screen.getByRole("button", { name: "Decrease interval" })
+    ).not.toBeDisabled()
   })
 })
