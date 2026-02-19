@@ -8,6 +8,7 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh"
 import { useAlertSettings } from "@/hooks/useAlertSettings"
 import { matchesQuery } from "@/utils/matchTickets"
 import { TicketList } from "@/components/TicketList"
+import { AlertSettings } from "@/components/AlertSettings"
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString("en-GB", {
@@ -66,7 +67,9 @@ export default function EventDetailPage() {
       onRefresh: () => setRefreshKey((k) => k + 1),
     })
 
-  const { query, autoOpen, playSound, sendNotification } = useAlertSettings()
+  // Single hook call — both the matching logic and AlertSettings UI share this state
+  const alertSettings = useAlertSettings(event?.id ?? "")
+  const { query, autoOpen, playSound, sendNotification } = alertSettings
 
   // Use refs so the effect always sees the latest values
   // without re-running when they change (we only want to trigger on new fetches)
@@ -114,7 +117,7 @@ export default function EventDetailPage() {
       <h1 className="mb-4 text-xl font-bold text-gray-900">{event.title}</h1>
 
       {/* Refresh controls */}
-      <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+      <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
         {/* Last refreshed */}
         <span>
           Last refreshed:{" "}
@@ -180,6 +183,11 @@ export default function EventDetailPage() {
         >
           {loading ? "Refreshing…" : "Refresh now"}
         </button>
+      </div>
+
+      {/* Alert settings — per-event, below the refresh bar */}
+      <div className="mb-6 rounded border border-gray-200 bg-gray-50">
+        <AlertSettings {...alertSettings} />
       </div>
 
       {loading && (

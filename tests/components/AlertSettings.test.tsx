@@ -2,6 +2,21 @@ import { render, screen, cleanup } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest"
 import { AlertSettings } from "@/components/AlertSettings"
+import { useAlertSettings } from "@/hooks/useAlertSettings"
+
+const EVENT_ID = "test-event"
+const KEY = (name: string) => `alert_${EVENT_ID}_${name}`
+
+// Wrapper that supplies the hook state as props so AlertSettings can be tested
+// with full localStorage integration.
+function AlertSettingsWrapper({ eventId = EVENT_ID }: { eventId?: string }) {
+  const settings = useAlertSettings(eventId)
+  return <AlertSettings {...settings} />
+}
+
+function renderAlertSettings(eventId = EVENT_ID) {
+  return render(<AlertSettingsWrapper eventId={eventId} />)
+}
 
 beforeEach(() => {
   localStorage.clear()
@@ -15,33 +30,33 @@ afterEach(() => {
 
 describe("AlertSettings", () => {
   it("renders the Alert Settings heading", () => {
-    render(<AlertSettings />)
+    renderAlertSettings()
     expect(screen.getByText("Alert Settings")).toBeInTheDocument()
   })
 
   it("renders the Match Query input", () => {
-    render(<AlertSettings />)
+    renderAlertSettings()
     expect(screen.getByLabelText(/match query/i)).toBeInTheDocument()
   })
 
   it("renders the Auto Open checkbox", () => {
-    render(<AlertSettings />)
+    renderAlertSettings()
     expect(screen.getByRole("checkbox", { name: /auto open/i })).toBeInTheDocument()
   })
 
   it("Auto Open checkbox is unchecked by default", () => {
-    render(<AlertSettings />)
+    renderAlertSettings()
     expect(screen.getByRole("checkbox", { name: /auto open/i })).not.toBeChecked()
   })
 
   it("Match Query input is empty by default", () => {
-    render(<AlertSettings />)
+    renderAlertSettings()
     expect(screen.getByLabelText(/match query/i)).toHaveValue("")
   })
 
   it("updates the Match Query input on typing", async () => {
     const user = userEvent.setup()
-    render(<AlertSettings />)
+    renderAlertSettings()
     const input = screen.getByLabelText(/match query/i)
     await user.type(input, "GYMRACE")
     expect(input).toHaveValue("GYMRACE")
@@ -49,14 +64,14 @@ describe("AlertSettings", () => {
 
   it("persists query to localStorage when typing", async () => {
     const user = userEvent.setup()
-    render(<AlertSettings />)
+    renderAlertSettings()
     await user.type(screen.getByLabelText(/match query/i), "marathon")
-    expect(localStorage.getItem("alert_query")).toBe("marathon")
+    expect(localStorage.getItem(KEY("query"))).toBe("marathon")
   })
 
   it("toggles Auto Open on click", async () => {
     const user = userEvent.setup()
-    render(<AlertSettings />)
+    renderAlertSettings()
     const toggle = screen.getByRole("checkbox", { name: /auto open/i })
     await user.click(toggle)
     expect(toggle).toBeChecked()
@@ -66,49 +81,49 @@ describe("AlertSettings", () => {
 
   it("persists autoOpen to localStorage when toggled", async () => {
     const user = userEvent.setup()
-    render(<AlertSettings />)
+    renderAlertSettings()
     await user.click(screen.getByRole("checkbox", { name: /auto open/i }))
-    expect(localStorage.getItem("alert_auto_open")).toBe("true")
+    expect(localStorage.getItem(KEY("auto_open"))).toBe("true")
   })
 
   it("restores query from localStorage on mount", () => {
-    localStorage.setItem("alert_query", "HEAVY")
-    render(<AlertSettings />)
+    localStorage.setItem(KEY("query"), "HEAVY")
+    renderAlertSettings()
     expect(screen.getByLabelText(/match query/i)).toHaveValue("HEAVY")
   })
 
   it("restores Auto Open state from localStorage on mount", () => {
-    localStorage.setItem("alert_auto_open", "true")
-    render(<AlertSettings />)
+    localStorage.setItem(KEY("auto_open"), "true")
+    renderAlertSettings()
     expect(screen.getByRole("checkbox", { name: /auto open/i })).toBeChecked()
   })
 
   it("persists values across re-mounts (simulating page reload)", async () => {
     const user = userEvent.setup()
-    const { unmount } = render(<AlertSettings />)
+    const { unmount } = renderAlertSettings()
     await user.type(screen.getByLabelText(/match query/i), "heavy")
     await user.click(screen.getByRole("checkbox", { name: /auto open/i }))
     unmount()
 
-    render(<AlertSettings />)
+    renderAlertSettings()
     expect(screen.getByLabelText(/match query/i)).toHaveValue("heavy")
     expect(screen.getByRole("checkbox", { name: /auto open/i })).toBeChecked()
   })
 
   describe("Play Sound toggle", () => {
     it("renders the Play Sound checkbox", () => {
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.getByRole("checkbox", { name: /play sound/i })).toBeInTheDocument()
     })
 
     it("Play Sound checkbox is unchecked by default", () => {
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.getByRole("checkbox", { name: /play sound/i })).not.toBeChecked()
     })
 
     it("toggles Play Sound on click", async () => {
       const user = userEvent.setup()
-      render(<AlertSettings />)
+      renderAlertSettings()
       const toggle = screen.getByRole("checkbox", { name: /play sound/i })
       await user.click(toggle)
       expect(toggle).toBeChecked()
@@ -116,21 +131,21 @@ describe("AlertSettings", () => {
 
     it("persists playSound to localStorage when toggled", async () => {
       const user = userEvent.setup()
-      render(<AlertSettings />)
+      renderAlertSettings()
       await user.click(screen.getByRole("checkbox", { name: /play sound/i }))
-      expect(localStorage.getItem("alert_play_sound")).toBe("true")
+      expect(localStorage.getItem(KEY("play_sound"))).toBe("true")
     })
 
     it("restores Play Sound state from localStorage on mount", () => {
-      localStorage.setItem("alert_play_sound", "true")
-      render(<AlertSettings />)
+      localStorage.setItem(KEY("play_sound"), "true")
+      renderAlertSettings()
       expect(screen.getByRole("checkbox", { name: /play sound/i })).toBeChecked()
     })
   })
 
   describe("Send Notification toggle", () => {
     it("renders the Send Notification checkbox", () => {
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.getByRole("checkbox", { name: /send notification/i })).toBeInTheDocument()
     })
 
@@ -139,7 +154,7 @@ describe("AlertSettings", () => {
         value: { permission: "default", requestPermission: vi.fn() },
         configurable: true,
       })
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.getByRole("checkbox", { name: /send notification/i })).toBeDisabled()
     })
 
@@ -148,7 +163,7 @@ describe("AlertSettings", () => {
         value: { permission: "granted", requestPermission: vi.fn() },
         configurable: true,
       })
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.getByRole("checkbox", { name: /send notification/i })).not.toBeDisabled()
     })
 
@@ -157,7 +172,7 @@ describe("AlertSettings", () => {
         value: { permission: "default", requestPermission: vi.fn() },
         configurable: true,
       })
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.getByRole("button", { name: /grant/i })).toBeInTheDocument()
     })
 
@@ -166,7 +181,7 @@ describe("AlertSettings", () => {
         value: { permission: "denied", requestPermission: vi.fn() },
         configurable: true,
       })
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.queryByRole("button", { name: /grant/i })).not.toBeInTheDocument()
     })
 
@@ -175,7 +190,7 @@ describe("AlertSettings", () => {
         value: { permission: "denied", requestPermission: vi.fn() },
         configurable: true,
       })
-      render(<AlertSettings />)
+      renderAlertSettings()
       expect(screen.getByText(/permission denied by browser/i)).toBeInTheDocument()
     })
 
@@ -188,7 +203,7 @@ describe("AlertSettings", () => {
         },
         configurable: true,
       })
-      render(<AlertSettings />)
+      renderAlertSettings()
       await user.click(screen.getByRole("button", { name: /grant/i }))
       expect(screen.getByRole("checkbox", { name: /send notification/i })).not.toBeDisabled()
     })
@@ -199,11 +214,11 @@ describe("AlertSettings", () => {
         value: { permission: "granted", requestPermission: vi.fn() },
         configurable: true,
       })
-      render(<AlertSettings />)
+      renderAlertSettings()
       const toggle = screen.getByRole("checkbox", { name: /send notification/i })
       await user.click(toggle)
       expect(toggle).toBeChecked()
-      expect(localStorage.getItem("alert_send_notification")).toBe("true")
+      expect(localStorage.getItem(KEY("send_notification"))).toBe("true")
     })
   })
 })

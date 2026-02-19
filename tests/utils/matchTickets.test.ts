@@ -64,4 +64,19 @@ describe("matchesQuery", () => {
     // A dot in regex matches any char; here it should only match a literal dot
     expect(matchesQuery(makeReg("MEN SOLO HEAVY"), "MEN.SOLO")).toBe(false)
   })
+
+  describe("combined display text matching", () => {
+    it("matches the full combined 'Title · Promotion' string copied from the UI", () => {
+      expect(matchesQuery(makeReg("MEN SOLO HEAVY", "GYMRACE"), "MEN SOLO HEAVY · GYMRACE")).toBe(true)
+    })
+
+    it("matches a cross-boundary substring spanning title and promotion", () => {
+      expect(matchesQuery(makeReg("MEN SOLO HEAVY", "GYMRACE"), "HEAVY · GYMRACE")).toBe(true)
+    })
+
+    it("matches a query that contains the literal separator character", () => {
+      // " · " is in the combined display string, so it matches (query is not empty after trim)
+      expect(matchesQuery(makeReg("MEN SOLO HEAVY", "GYMRACE"), " · ")).toBe(true)
+    })
+  })
 })

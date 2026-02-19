@@ -1,17 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { useAlertSettings } from "@/hooks/useAlertSettings"
+import { AlertSettingsState } from "@/hooks/useAlertSettings"
 
 function getNotificationPermission(): NotificationPermission {
   if (typeof window === "undefined" || !("Notification" in window)) return "denied"
   return Notification.permission
 }
 
-export function AlertSettings() {
-  const { query, autoOpen, playSound, sendNotification, setQuery, setAutoOpen, setPlaySound, setSendNotification } =
-    useAlertSettings()
-
+export function AlertSettings({
+  query,
+  autoOpen,
+  playSound,
+  sendNotification,
+  setQuery,
+  setAutoOpen,
+  setPlaySound,
+  setSendNotification,
+}: AlertSettingsState) {
   const [notificationPermission, setNotificationPermission] =
     useState<NotificationPermission>(getNotificationPermission)
 

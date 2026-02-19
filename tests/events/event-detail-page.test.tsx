@@ -18,8 +18,24 @@ vi.mock("@/context/EventsContext", () => ({
   useEvents: () => ({ getEvent: mockGetEvent }),
 }))
 
+const mockSetQuery = vi.hoisted(() => vi.fn())
+const mockSetAutoOpen = vi.hoisted(() => vi.fn())
+const mockSetPlaySound = vi.hoisted(() => vi.fn())
+const mockSetSendNotification = vi.hoisted(() => vi.fn())
+
+const defaultAlertSettings = () => ({
+  query: "",
+  autoOpen: false,
+  playSound: false,
+  sendNotification: false,
+  setQuery: mockSetQuery,
+  setAutoOpen: mockSetAutoOpen,
+  setPlaySound: mockSetPlaySound,
+  setSendNotification: mockSetSendNotification,
+})
+
 const mockUseAlertSettings = vi.hoisted(() =>
-  vi.fn(() => ({ query: "", autoOpen: false, playSound: false, sendNotification: false }))
+  vi.fn(() => defaultAlertSettings())
 )
 
 vi.mock("@/hooks/useAlertSettings", () => ({
@@ -31,7 +47,7 @@ afterEach(() => {
   vi.restoreAllMocks()
   mockGetEvent.mockReset()
   mockUseAlertSettings.mockReset()
-  mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: false, playSound: false, sendNotification: false })
+  mockUseAlertSettings.mockReturnValue(defaultAlertSettings())
 })
 
 const TEST_EVENT = {
