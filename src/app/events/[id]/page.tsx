@@ -42,12 +42,18 @@ function playAlertSound() {
   }
 }
 
-function sendMatchNotification(ticketTitle: string) {
+function sendMatchNotification(ticketTitle: string, url?: string) {
   if (typeof window === "undefined" || !("Notification" in window)) return
   if (Notification.permission !== "granted") return
-  new Notification("Ticket match found!", {
+  const notification = new Notification("Ticket match found!", {
     body: ticketTitle,
   })
+  if (url) {
+    notification.onclick = () => {
+      window.open(url, "_blank")
+      window.focus()
+    }
+  }
 }
 
 export default function EventDetailPage() {
@@ -98,7 +104,7 @@ export default function EventDetailPage() {
       playAlertSound()
     }
     if (sendNotificationRef.current) {
-      sendMatchNotification(match.ticket.title)
+      sendMatchNotification(match.ticket.title, match.resale.public_url)
     }
     // Pause auto-refresh when a match is found
     setPaused(true)
