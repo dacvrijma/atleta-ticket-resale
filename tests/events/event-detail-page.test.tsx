@@ -12,16 +12,24 @@ vi.mock("next/link", () => ({
   ),
 }))
 
-const mockGetEvent = vi.fn()
+const mockGetEvent = vi.hoisted(() => vi.fn())
 
 vi.mock("@/context/EventsContext", () => ({
   useEvents: () => ({ getEvent: mockGetEvent }),
+}))
+
+const mockUseAlertSettings = vi.hoisted(() => vi.fn(() => ({ query: "", autoOpen: false })))
+
+vi.mock("@/hooks/useAlertSettings", () => ({
+  useAlertSettings: mockUseAlertSettings,
 }))
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
   mockGetEvent.mockReset()
+  mockUseAlertSettings.mockReset()
+  mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: false })
 })
 
 const TEST_EVENT = {
@@ -234,5 +242,92 @@ describe("EventDetailPage", () => {
     expect(
       screen.getByRole("button", { name: "Decrease interval" })
     ).not.toBeDisabled()
+  })
+
+  describe("alert auto-open", () => {
+    it("opens the buy URL when autoOpen is ON and a ticket title matches the query", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true })
+      mockFetchSuccess([makeRegistration("1")])
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
+
+      render(<EventDetailPage />)
+
+      await waitFor(() => {
+        expect(windowOpenSpy).toHaveBeenCalledWith("https://example.com/buy", "_blank")
+      })
+    })
+
+    it("does NOT open a tab when autoOpen is OFF even if a ticket matches", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: false })
+      mockFetchSuccess([makeRegistration("1")])
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+      )
+      expect(windowOpenSpy).not.toHaveBeenCalled()
+    })
+
+    it("does NOT open a tab when the query is empty", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "", autoOpen: true })
+      mockFetchSuccess([makeRegistration("1")])
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+      )
+      expect(windowOpenSpy).not.toHaveBeenCalled()
+    })
+
+    it("does NOT open a tab when no tickets match the query", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "WOMEN", autoOpen: true })
+      mockFetchSuccess([makeRegistration("1")])
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("MEN SOLO HEAVY")).toBeInTheDocument()
+      )
+      expect(windowOpenSpy).not.toHaveBeenCalled()
+    })
+
+    it("opens only the first matching ticket's URL when multiple tickets match", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true })
+      const reg1 = { ...makeRegistration("1"), resale: { ...makeRegistration("1").resale, public_url: "https://example.com/buy/1" } }
+      const reg2 = { ...makeRegistration("2"), resale: { ...makeRegistration("2").resale, public_url: "https://example.com/buy/2" } }
+      mockFetchSuccess([reg1, reg2])
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
+
+      render(<EventDetailPage />)
+
+      await waitFor(() => {
+        expect(windowOpenSpy).toHaveBeenCalledTimes(1)
+        expect(windowOpenSpy).toHaveBeenCalledWith("https://example.com/buy/1", "_blank")
+      })
+    })
+
+    it("does NOT open a tab when no tickets are returned", async () => {
+      mockGetEvent.mockReturnValue(TEST_EVENT)
+      mockUseAlertSettings.mockReturnValue({ query: "MEN SOLO", autoOpen: true })
+      mockFetchSuccess([])
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
+
+      render(<EventDetailPage />)
+
+      await waitFor(() =>
+        expect(screen.getByText("No tickets available at the moment.")).toBeInTheDocument()
+      )
+      expect(windowOpenSpy).not.toHaveBeenCalled()
+    })
   })
 })

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { useEvents } from "@/context/EventsContext"
 import { useTickets } from "@/hooks/useTickets"
 import { useAutoRefresh } from "@/hooks/useAutoRefresh"
+import { useAlertSettings } from "@/hooks/useAlertSettings"
+import { matchesQuery } from "@/utils/matchTickets"
 import { TicketList } from "@/components/TicketList"
 
 function formatTime(date: Date): string {
@@ -37,6 +39,28 @@ export default function EventDetailPage() {
     useAutoRefresh({
       onRefresh: () => setRefreshKey((k) => k + 1),
     })
+
+  const { query, autoOpen } = useAlertSettings()
+
+  // Use refs so the effect always sees the latest query/autoOpen values
+  // without re-running when they change (we only want to trigger on new fetches)
+  const queryRef = useRef(query)
+  const autoOpenRef = useRef(autoOpen)
+  useEffect(() => { queryRef.current = query }, [query])
+  useEffect(() => { autoOpenRef.current = autoOpen }, [autoOpen])
+
+  useEffect(() => {
+    if (!lastRefreshed) return
+    const q = queryRef.current
+    const open = autoOpenRef.current
+    if (!q.trim() || !open) return
+    const match = tickets.find(
+      (reg) => reg.resale.available && matchesQuery(reg, q)
+    )
+    if (match?.resale.public_url) {
+      window.open(match.resale.public_url, "_blank")
+    }
+  }, [lastRefreshed, tickets])
 
   if (!event) {
     return (
