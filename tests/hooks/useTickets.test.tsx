@@ -135,4 +135,62 @@ describe("useTickets", () => {
     const body = JSON.parse(calledOptions!.body as string)
     expect(body.eventId).toBe(TEST_EVENT_ID)
   })
+
+  it("lastRefreshed is null before the first fetch completes", () => {
+    vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useTickets(TEST_EVENT_ID))
+
+    expect(result.current.lastRefreshed).toBeNull()
+  })
+
+  it("sets lastRefreshed to a Date after a successful fetch", async () => {
+    mockProxySuccess([])
+    const before = new Date()
+
+    const { result } = renderHook(() => useTickets(TEST_EVENT_ID))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const after = new Date()
+    expect(result.current.lastRefreshed).toBeInstanceOf(Date)
+    expect(result.current.lastRefreshed!.getTime()).toBeGreaterThanOrEqual(
+      before.getTime()
+    )
+    expect(result.current.lastRefreshed!.getTime()).toBeLessThanOrEqual(
+      after.getTime()
+    )
+  })
+
+  it("does not set lastRefreshed when the fetch fails", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("Forbidden", { status: 403 })
+    )
+
+    const { result } = renderHook(() => useTickets(TEST_EVENT_ID))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.lastRefreshed).toBeNull()
+  })
+
+  it("refetches when refreshKey changes", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ data: { event: { registrations_for_sale: [] } } }),
+        { status: 200 }
+      )
+    )
+
+    const { rerender } = renderHook(
+      ({ key }: { key: number }) => useTickets(TEST_EVENT_ID, key),
+      { initialProps: { key: 0 } }
+    )
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1))
+
+    rerender({ key: 1 })
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(2))
+  })
 })

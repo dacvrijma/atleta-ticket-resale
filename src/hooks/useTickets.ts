@@ -7,15 +7,24 @@ interface UseTicketsResult {
   tickets: ResaleRegistration[]
   loading: boolean
   error: string | null
+  lastRefreshed: Date | null
 }
 
-export function useTickets(eventId: string): UseTicketsResult {
+export function useTickets(eventId: string, refreshKey = 0): UseTicketsResult {
   const [tickets, setTickets] = useState<ResaleRegistration[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
 
   useEffect(() => {
+    if (!eventId) {
+      setLoading(false)
+      return
+    }
+
     const controller = new AbortController()
+    setLoading(true)
+    setError(null)
 
     async function fetchTickets() {
       try {
@@ -32,6 +41,7 @@ export function useTickets(eventId: string): UseTicketsResult {
 
         const json: ResaleApiResponse = await response.json()
         setTickets(json.data.event.registrations_for_sale)
+        setLastRefreshed(new Date())
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return
         setError(err instanceof Error ? err.message : "An unknown error occurred")
@@ -45,7 +55,7 @@ export function useTickets(eventId: string): UseTicketsResult {
     fetchTickets()
 
     return () => controller.abort()
-  }, [eventId])
+  }, [eventId, refreshKey])
 
-  return { tickets, loading, error }
+  return { tickets, loading, error, lastRefreshed }
 }
