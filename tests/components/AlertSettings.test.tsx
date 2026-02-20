@@ -110,6 +110,21 @@ describe("AlertSettings", () => {
     expect(screen.getByRole("checkbox", { name: /auto open/i })).toBeChecked()
   })
 
+  describe("Test popup button", () => {
+    it("renders the Test popup button", () => {
+      renderAlertSettings()
+      expect(screen.getByRole("button", { name: /test popup/i })).toBeInTheDocument()
+    })
+
+    it("calls window.open with about:blank when Test popup is clicked", async () => {
+      const user = userEvent.setup()
+      const windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null)
+      renderAlertSettings()
+      await user.click(screen.getByRole("button", { name: /test popup/i }))
+      expect(windowOpenSpy).toHaveBeenCalledWith("about:blank", "_blank")
+    })
+  })
+
   describe("Play Sound toggle", () => {
     it("renders the Play Sound checkbox", () => {
       renderAlertSettings()
@@ -219,6 +234,48 @@ describe("AlertSettings", () => {
       await user.click(toggle)
       expect(toggle).toBeChecked()
       expect(localStorage.getItem(KEY("send_notification"))).toBe("true")
+    })
+
+    it("shows Test notification button when permission is granted", () => {
+      Object.defineProperty(window, "Notification", {
+        value: { permission: "granted", requestPermission: vi.fn() },
+        configurable: true,
+      })
+      renderAlertSettings()
+      expect(screen.getByRole("button", { name: /test notification/i })).toBeInTheDocument()
+    })
+
+    it("does not show Test notification button when permission is not granted", () => {
+      Object.defineProperty(window, "Notification", {
+        value: { permission: "default", requestPermission: vi.fn() },
+        configurable: true,
+      })
+      renderAlertSettings()
+      expect(screen.queryByRole("button", { name: /test notification/i })).not.toBeInTheDocument()
+    })
+
+    it("does not show Test notification button when permission is denied", () => {
+      Object.defineProperty(window, "Notification", {
+        value: { permission: "denied", requestPermission: vi.fn() },
+        configurable: true,
+      })
+      renderAlertSettings()
+      expect(screen.queryByRole("button", { name: /test notification/i })).not.toBeInTheDocument()
+    })
+
+    it("sends a Notification when Test notification is clicked", async () => {
+      const user = userEvent.setup()
+      const NotificationSpy = vi.fn()
+      Object.defineProperty(window, "Notification", {
+        value: Object.assign(NotificationSpy, { permission: "granted", requestPermission: vi.fn() }),
+        configurable: true,
+      })
+      renderAlertSettings()
+      await user.click(screen.getByRole("button", { name: /test notification/i }))
+      expect(NotificationSpy).toHaveBeenCalledWith(
+        "Test notification",
+        { body: "This is a test notification from Atleta Ticket Resale." }
+      )
     })
   })
 })

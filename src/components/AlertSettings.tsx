@@ -66,13 +66,21 @@ export function AlertSettings({
         >
           Auto Open
         </label>
-        <input
-          id="alert-auto-open"
-          type="checkbox"
-          checked={autoOpen}
-          onChange={(e) => setAutoOpen(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.open("about:blank", "_blank")}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Test popup
+          </button>
+          <input
+            id="alert-auto-open"
+            type="checkbox"
+            checked={autoOpen}
+            onChange={(e) => setAutoOpen(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          />
+        </div>
       </div>
       <div className="flex items-center justify-between">
         <label
@@ -109,6 +117,20 @@ export function AlertSettings({
             className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
           />
         </div>
+        {notificationPermission === "granted" && (
+          <div className="flex justify-end">
+            <button
+              onClick={() =>
+                new Notification("Test notification", {
+                  body: "This is a test notification from Atleta Ticket Resale.",
+                })
+              }
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Test notification
+            </button>
+          </div>
+        )}
         {notificationPermission !== "granted" && (
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400">
