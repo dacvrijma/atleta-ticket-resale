@@ -111,6 +111,20 @@ export function Sidebar() {
           </ul>
         )}
       </nav>
+
+      <div className="border-t border-gray-200 px-4 py-3">
+        <button
+          onClick={() => {
+            const w = window.open("", "_blank", `popup,width=${screen.width},height=${screen.height},left=0,top=0`)
+            if (w) {
+              w.document.write("<html><body style='display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:system-ui'><h1>Setup confirmed</h1></body></html>")
+            }
+          }}
+          className="w-full rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+        >
+          Test popup
+        </button>
+      </div>
     </aside>
   )
 }

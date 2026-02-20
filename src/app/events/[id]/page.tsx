@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEvents } from "@/context/EventsContext"
 import { useTickets } from "@/hooks/useTickets"
 import { useAutoRefresh } from "@/hooks/useAutoRefresh"
@@ -42,18 +42,27 @@ function playAlertSound() {
   }
 }
 
-function sendMatchNotification(ticketTitle: string) {
+function sendMatchNotification(ticketTitle: string, url?: string) {
   if (typeof window === "undefined" || !("Notification" in window)) return
   if (Notification.permission !== "granted") return
-  new Notification("Ticket match found!", {
+  const notification = new Notification("Ticket match found!", {
     body: ticketTitle,
   })
+  if (url) {
+    notification.onclick = () => {
+      window.open(url, "_blank")
+      window.focus()
+    }
+  }
 }
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { getEvent } = useEvents()
+  const router = useRouter()
+  const { getEvent, removeEvent } = useEvents()
   const event = getEvent(id)
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -84,21 +93,20 @@ export default function EventDetailPage() {
 
   useEffect(() => {
     if (!lastRefreshed) return
-    const q = queryRef.current
-    if (!q.trim()) return
-    const match = tickets.find(
-      (reg) => reg.resale.available && matchesQuery(reg, q)
-    )
+    const q = queryRef.current?.trim() ?? ""
+    const match = q
+      ? tickets.find((reg) => reg.resale.available && matchesQuery(reg, q))
+      : tickets.find((reg) => reg.resale.available)
     if (!match) return
 
     if (autoOpenRef.current && match.resale.public_url) {
-      window.open(match.resale.public_url, "_blank")
+      window.open(match.resale.public_url, "_blank", `popup,width=${screen.width},height=${screen.height},left=0,top=0`)
     }
     if (playSoundRef.current) {
       playAlertSound()
     }
     if (sendNotificationRef.current) {
-      sendMatchNotification(match.ticket.title)
+      sendMatchNotification(match.ticket.title, match.resale.public_url)
     }
     // Pause auto-refresh when a match is found
     setPaused(true)
@@ -114,7 +122,44 @@ export default function EventDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-4 text-xl font-bold text-gray-900">{event.title}</h1>
+      <div className="mb-4 flex items-center gap-4">
+        <h1 className="text-xl font-bold text-gray-900">{event.title}</h1>
+        <a
+          href={`https://atleta.cc/e/${event.eventId}/resale`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded bg-gray-900 px-3 py-1 text-xs font-semibold text-white hover:bg-gray-700"
+        >
+          Resale page
+        </a>
+        {showDeleteConfirm ? (
+          <span className="flex items-center gap-2 text-sm">
+            <span className="text-gray-600">Are you sure?</span>
+            <button
+              onClick={() => {
+                removeEvent(id)
+                router.push("/")
+              }}
+              className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-500"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+          </span>
+        ) : (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="rounded bg-red-600 px-3 py-1 text-xs font-semibold text-white hover:bg-red-500"
+          >
+            Delete event
+          </button>
+        )}
+      </div>
 
       {/* Refresh controls */}
       <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
